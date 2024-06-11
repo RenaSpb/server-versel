@@ -17,9 +17,6 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 
-// Handle preflight requests for all routes
-app.options('*', cors(corsOptions));
-
 const dbUri = process.env.MONGODB_URI;
 
 mongoose.connect(dbUri, {
@@ -33,7 +30,7 @@ mongoose.connect(dbUri, {
         console.error('Error connecting to MongoDB:', error);
     });
 
-// Получение всех задач
+
 app.get('/tasks', async (req, res) => {
     try {
         const tasks = await Task.find();
@@ -43,6 +40,15 @@ app.get('/tasks', async (req, res) => {
     }
 });
 
+app.delete('/statuses/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        await Status.findByIdAndDelete(id);
+        res.json({ message: 'Status deleted' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
 // Получение всех статусов
 app.get('/statuses', async (req, res) => {
     try {
@@ -53,7 +59,7 @@ app.get('/statuses', async (req, res) => {
     }
 });
 
-// Добавление новой задачи
+
 app.post('/tasks', async (req, res) => {
     try {
         const task = new Task(req.body);
@@ -64,7 +70,17 @@ app.post('/tasks', async (req, res) => {
     }
 });
 
-// Обновление задачи
+app.post('/statuses', async (req, res) => {
+    try {
+        const status = new Status(req.body);
+        await status.save();
+        res.status(201).json(status);
+    } catch (error) {
+        console.error('Error during POST /statuses:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 app.patch('/tasks/:id', async (req, res) => {
     try {
         const { id } = req.params;
@@ -75,7 +91,6 @@ app.patch('/tasks/:id', async (req, res) => {
     }
 });
 
-// Удаление задачи
 app.delete('/tasks/:id', async (req, res) => {
     try {
         const { id } = req.params;
