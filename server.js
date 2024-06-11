@@ -8,14 +8,17 @@ require('dotenv').config();
 const app = express();
 const port = process.env.PORT || 5000;
 
-// Настройка CORS
-app.use(cors({
-    origin: '*', // Разрешить все источники. Для повышения безопасности, укажите точный URL вашего React-приложения, например: origin: 'http://localhost:3000'
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-    allowedHeaders: 'Content-Type,Authorization'
-}));
+const corsOptions = {
+    origin: '*',
+    methods: ['GET', 'POST', 'PATCH', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+};
 
+app.use(cors(corsOptions));
 app.use(express.json());
+
+// Handle preflight requests for all routes
+app.options('*', cors(corsOptions));
 
 const dbUri = process.env.MONGODB_URI;
 
@@ -35,6 +38,16 @@ app.get('/tasks', async (req, res) => {
     try {
         const tasks = await Task.find();
         res.json(tasks);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Получение всех статусов
+app.get('/statuses', async (req, res) => {
+    try {
+        const statuses = await Status.find();
+        res.json(statuses);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -68,16 +81,6 @@ app.delete('/tasks/:id', async (req, res) => {
         const { id } = req.params;
         await Task.findByIdAndDelete(id);
         res.json({ message: 'Task deleted' });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
-// Получение всех статусов
-app.get('/statuses', async (req, res) => {
-    try {
-        const statuses = await Status.find();
-        res.json(statuses);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
